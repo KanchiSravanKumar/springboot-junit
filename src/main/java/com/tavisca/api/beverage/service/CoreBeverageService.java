@@ -14,10 +14,7 @@ import java.util.*;
 
 @Service
 public class CoreBeverageService {
-
-    private BigDecimal total = BigDecimal.ZERO;
-    private MenuItems currentItem = null;
-    private int noOfIngredients = 0; // for checking if all ingredients are excluded
+    // for checking if all ingredients are excluded
 
     private static final Map<MenuItems, String> mapOfBevToCosts = createMapOfBevAndCosts();
     private static final Map<MenuItemIngredients, BigDecimal> mapOfIngredientsToCosts = createMapOfIngredientsAndCosts();
@@ -45,6 +42,10 @@ public class CoreBeverageService {
 
 
     public BigDecimal getOrderTotalBill(OrderRequest order) throws InvalidOrderRequestException {
+        BigDecimal total = BigDecimal.ZERO;
+        MenuItems currentItem = null;
+        int noOfIngredients = 0;
+
         if (StringUtils.isBlank(order.getItems())) {
             throw new InvalidOrderRequestException(Errors.INVALID_ORDER_REQUEST, HttpStatus.BAD_REQUEST);
         }
@@ -55,7 +56,7 @@ public class CoreBeverageService {
             item = item.trim();
 
             // exclusion of ingredients without menu item
-            if(item.startsWith("-") && this.currentItem==null){
+            if(item.startsWith("-") && currentItem==null){
                 throw new InvalidOrderRequestException(Errors.INVALID_ORDER_REQUEST, HttpStatus.BAD_REQUEST);
             }
 
@@ -66,14 +67,14 @@ public class CoreBeverageService {
                 BigDecimal itemCost = new BigDecimal(listOfItemsAndPrice.get(listOfItemsAndPrice.size()-1));
                 if (itemCost != null) {
                     total = itemCost.add(total); // adding cost of menu item
-                    this.currentItem = MenuItems.getItem(item);
-                    this.noOfIngredients = listOfItemsAndPrice.size()-1;
+                    currentItem = MenuItems.getItem(item);
+                    noOfIngredients = listOfItemsAndPrice.size()-1;
                 } else {
                     continue; // if item is not a menu item and not excluded, skip this item
                 }
             } else { // item is excluded
                 String formattedItemString  = item.substring(1);
-                checkIngredientExistInItem(formattedItemString);
+                checkIngredientExistInItem(formattedItemString, currentItem.toString());
                 noOfIngredients--;
                 BigDecimal ingredientCost = mapOfIngredientsToCosts
                         .get(MenuItemIngredients.getItem(formattedItemString));
@@ -97,19 +98,24 @@ public class CoreBeverageService {
         }
 
 
-        return this.total;
+        return total;
     }
 
     /*
      *  Check if ingredient exists in an Item
      */
-    private void checkIngredientExistInItem(String formattedItemString) throws InvalidOrderRequestException {
-        String itemString = mapOfBevToCosts.get(currentItem);
-        List<String> listOfIngredients = Arrays.asList(itemString.split(","));
-        Boolean exists = listOfIngredients.stream().anyMatch(in->in.equalsIgnoreCase(formattedItemString));
-        if(!exists){
-            // Item/ingredient mismatch
+    private void checkIngredientExistInItem(String formattedItemString, String currentItem) throws InvalidOrderRequestException {
+        String itemString = mapOfBevToCosts.get(MenuItems.getItem(currentItem));
+        if(StringUtils.isNotBlank(itemString)) {
+            List<String> listOfIngredients = Arrays.asList(itemString.split(","));
+            Boolean exists = listOfIngredients.stream().anyMatch(in -> in.equalsIgnoreCase(formattedItemString));
+            if(!exists){
+                // Item/ingredient mismatch
+                throw new InvalidOrderRequestException(Errors.ITEM_INGREDIENT_MISMATCH, HttpStatus.BAD_REQUEST);
+            }
+        } else {
             throw new InvalidOrderRequestException(Errors.ITEM_INGREDIENT_MISMATCH, HttpStatus.BAD_REQUEST);
         }
+
     }
 }

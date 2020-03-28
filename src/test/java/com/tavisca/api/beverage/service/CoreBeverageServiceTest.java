@@ -39,15 +39,15 @@ class CoreBeverageServiceTest {
     @Test
     void getOrderTotalBill_validRequestWithExclusion_correctTotalBill() throws InvalidOrderRequestException {
         OrderRequest order = new OrderRequest("Coffee,Tea, -milk");
-        BigDecimal total = coreBeverageService.getOrderTotalBill(order);
-        Assert.assertEquals(new BigDecimal(8), total);
+        BigDecimal total1 = coreBeverageService.getOrderTotalBill(order);
+        Assert.assertEquals(new BigDecimal(8), total1);
     }
 
     @Test
     void getOrderTotalBill_validRequestWithMultipleExclusion_correctTotalBill() throws InvalidOrderRequestException {
         OrderRequest order = new OrderRequest("Coffee, -milk, Tea, -milk");
-        BigDecimal total = coreBeverageService.getOrderTotalBill(order);
-        Assert.assertEquals(new BigDecimal(7), total);
+        BigDecimal total2 = coreBeverageService.getOrderTotalBill(order);
+        Assert.assertEquals(new BigDecimal(7), total2);
     }
 
     @Test
@@ -58,13 +58,6 @@ class CoreBeverageServiceTest {
         });
     }
 
-    @Test
-    void getOrderTotalBill_invalidRequestWithIngredientExclusion_invalidOrderRequestException() throws InvalidOrderRequestException{
-        OrderRequest order = new OrderRequest("milk");
-        Assertions.assertThrows(InvalidOrderRequestException.class, () -> {
-            coreBeverageService.getOrderTotalBill(order);
-        });
-    }
 
     @Test
     void getOrderTotalBill_invalidRequestWithNoMenuItem_invalidOrderRequestException() throws InvalidOrderRequestException{
