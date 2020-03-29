@@ -46,13 +46,16 @@ public class CoreBeverageService {
         MenuItems currentItem = null;
         int noOfIngredients = 0;
 
-        if (order==null || order.getItems().size() <1) {  // checking null or empty list
+        if (order==null || order.getItems()==null || order.getItems().size() < 1) {  // checking null or empty list
             throw new InvalidOrderRequestException(Errors.INVALID_ORDER_REQUEST, HttpStatus.BAD_REQUEST);
         }
 
         for (String orderItems : order.getItems()) { //outer loop: looping on all the orders
             List<String> orderItem = Arrays.asList(orderItems.split(","));
-            for (String item : orderItem) { // inner loop: looping on ingredients of single order
+            for (String item : orderItem) {// inner loop: looping on ingredients of single order
+                if (StringUtils.isBlank(item)){
+                    throw new InvalidOrderRequestException(Errors.INVALID_ORDER_REQUEST, HttpStatus.BAD_REQUEST);
+                }
                 item = item.trim();
 
                 // exclusion of ingredients without menu item
