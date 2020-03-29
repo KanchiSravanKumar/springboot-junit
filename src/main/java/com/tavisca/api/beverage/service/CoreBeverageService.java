@@ -46,50 +46,51 @@ public class CoreBeverageService {
         MenuItems currentItem = null;
         int noOfIngredients = 0;
 
-        if (StringUtils.isBlank(order.getItems())) {
+        if (order==null || order.getItems().size() <1) {  // checking null or empty list
             throw new InvalidOrderRequestException(Errors.INVALID_ORDER_REQUEST, HttpStatus.BAD_REQUEST);
         }
 
-        List<String> orderItems = Arrays.asList(order.getItems().split(","));
-        for (String item : orderItems) {
+        for (String orderItems : order.getItems()) { //outer loop: looping on all the orders
+            List<String> orderItem = Arrays.asList(orderItems.split(","));
+            for (String item : orderItem) { // inner loop: looping on ingredients of single order
+                item = item.trim();
 
-            item = item.trim();
-
-            // exclusion of ingredients without menu item
-            if(item.startsWith("-") && currentItem==null){
-                throw new InvalidOrderRequestException(Errors.INVALID_ORDER_REQUEST, HttpStatus.BAD_REQUEST);
-            }
-
-            // if item is not excluded
-            if (!item.startsWith("-")) {
-                String itemsString = mapOfBevToCosts.get(MenuItems.getItem(item));
-                List<String> listOfItemsAndPrice = Arrays.asList(itemsString.split(","));
-                BigDecimal itemCost = new BigDecimal(listOfItemsAndPrice.get(listOfItemsAndPrice.size()-1));
-                if (itemCost != null) {
-                    total = itemCost.add(total); // adding cost of menu item
-                    currentItem = MenuItems.getItem(item);
-                    noOfIngredients = listOfItemsAndPrice.size()-1;
-                } else {
-                    continue; // if item is not a menu item and not excluded, skip this item
+                // exclusion of ingredients without menu item
+                if (item.startsWith("-") && currentItem == null) {
+                    throw new InvalidOrderRequestException(Errors.INVALID_ORDER_REQUEST, HttpStatus.BAD_REQUEST);
                 }
-            } else { // item is excluded
-                String formattedItemString  = item.substring(1);
-                checkIngredientExistInItem(formattedItemString, currentItem.toString());
-                noOfIngredients--;
-                BigDecimal ingredientCost = mapOfIngredientsToCosts
-                        .get(MenuItemIngredients.getItem(formattedItemString));
-                if(ingredientCost!=null){
-                    total = total.subtract(ingredientCost);
+
+                // if item is not excluded
+                if (!item.startsWith("-")) {
+                    String itemsString = mapOfBevToCosts.get(MenuItems.getItem(item));
+                    List<String> listOfItemsAndPrice = Arrays.asList(itemsString.split(","));
+                    BigDecimal itemCost = new BigDecimal(listOfItemsAndPrice.get(listOfItemsAndPrice.size() - 1));
+                    if (itemCost != null) {
+                        total = itemCost.add(total); // adding cost of menu item
+                        currentItem = MenuItems.getItem(item);
+                        noOfIngredients = listOfItemsAndPrice.size() - 1;
+                    } else {
+                        continue; // if item is not a menu item and not excluded, skip this item
+                    }
+                } else { // item is excluded
+                    String formattedItemString = item.substring(1);
+                    checkIngredientExistInItem(formattedItemString, currentItem.toString());
+                    noOfIngredients--;
+                    BigDecimal ingredientCost = mapOfIngredientsToCosts
+                            .get(MenuItemIngredients.getItem(formattedItemString));
+                    if (ingredientCost != null) {
+                        total = total.subtract(ingredientCost);
+                    }
+                }
+                if (noOfIngredients == 0) {
+                    throw new InvalidOrderRequestException(Errors.EXCLUDED_ALL_INGREDIENTS, HttpStatus.BAD_REQUEST);
                 }
             }
-            if (noOfIngredients==0){
-                throw new InvalidOrderRequestException(Errors.INVALID_ORDER_REQUEST, HttpStatus.BAD_REQUEST);
-            }
-        }
 
-        if(total.compareTo(BigDecimal.ZERO) <= 0){
-            // total bill is negative
-            throw new InvalidOrderRequestException(Errors.TOTAL_BILL_NEGATIVE, HttpStatus.BAD_REQUEST);
+            if (total.compareTo(BigDecimal.ZERO) <= 0) {
+                // total bill is negative
+                throw new InvalidOrderRequestException(Errors.TOTAL_BILL_NEGATIVE, HttpStatus.BAD_REQUEST);
+            }
         }
 
         if(currentItem==null){
