@@ -67,8 +67,7 @@ public class CoreBeverageService {
                 if (!item.startsWith("-")) {
                     String itemsString = mapOfBevToCosts.get(MenuItems.getItem(item));
                     if(StringUtils.isBlank(itemsString)){
-                        currentItem= null;
-                        continue;
+                        throw new InvalidOrderRequestException(Errors.INVALID_ORDER_REQUEST, HttpStatus.BAD_REQUEST);
                     }
                     List<String> listOfItemsAndPrice = Arrays.asList(itemsString.split(","));
                     BigDecimal itemCost = new BigDecimal(listOfItemsAndPrice.get(listOfItemsAndPrice.size() - 1));
