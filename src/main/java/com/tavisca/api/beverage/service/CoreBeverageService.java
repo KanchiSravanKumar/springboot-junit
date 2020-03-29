@@ -66,6 +66,10 @@ public class CoreBeverageService {
                 // if item is not excluded
                 if (!item.startsWith("-")) {
                     String itemsString = mapOfBevToCosts.get(MenuItems.getItem(item));
+                    if(StringUtils.isBlank(itemsString)){
+                        currentItem= null;
+                        continue;
+                    }
                     List<String> listOfItemsAndPrice = Arrays.asList(itemsString.split(","));
                     BigDecimal itemCost = new BigDecimal(listOfItemsAndPrice.get(listOfItemsAndPrice.size() - 1));
                     if (itemCost != null) {
